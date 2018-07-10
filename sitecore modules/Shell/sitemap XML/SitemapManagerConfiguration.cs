@@ -92,7 +92,6 @@ namespace Sitecore.Modules.SitemapXML
 
             foreach (XmlNode node in Factory.GetConfigNodes("sitemapVariables/sitemapVariable"))
             {
-
                 if (XmlUtil.GetAttribute("name", node) == name)
                 {
                     result = XmlUtil.GetAttribute("value", node);
@@ -123,11 +122,11 @@ namespace Sitecore.Modules.SitemapXML
         public static StringDictionary GetSites()
         {
             StringDictionary sites = new StringDictionary();
-            foreach (XmlNode node in Factory.GetConfigNodes("sitemapVariables/sites/site"))
+            foreach (XmlNode node in Factory.GetConfigNodes("sites/site"))
             {
-                if (!string.IsNullOrEmpty(XmlUtil.GetAttribute("name", node)) && !string.IsNullOrEmpty(XmlUtil.GetAttribute("filename", node)))
+                if (!string.IsNullOrEmpty(XmlUtil.GetAttribute("name", node)) && !string.IsNullOrEmpty(XmlUtil.GetAttribute("sitemapFileName", node)))
                 {
-                    sites.Add(XmlUtil.GetAttribute("name", node), XmlUtil.GetAttribute("filename", node));
+                    sites.Add(XmlUtil.GetAttribute("name", node), XmlUtil.GetAttribute("sitemapFileName", node));
                 }
 
             }
@@ -138,12 +137,29 @@ namespace Sitecore.Modules.SitemapXML
         {
             string result = string.Empty;
 
-            foreach (XmlNode node in Factory.GetConfigNodes("sitemapVariables/sites/site"))
+            foreach (XmlNode node in Factory.GetConfigNodes("sites/site"))
             {
 
                 if (XmlUtil.GetAttribute("name", node) == name)
                 {
                     result = XmlUtil.GetAttribute("serverUrl", node);
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        public static string GetRobotsTextBySite(string name)
+        {
+            string result = string.Empty;
+
+            foreach (XmlNode node in Factory.GetConfigNodes("sites/site"))
+            {
+
+                if (XmlUtil.GetAttribute("name", node) == name)
+                {
+                    result = XmlUtil.GetAttribute("robotsText", node);
                     break;
                 }
             }

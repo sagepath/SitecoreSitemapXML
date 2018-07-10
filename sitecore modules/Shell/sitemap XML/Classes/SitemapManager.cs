@@ -108,27 +108,27 @@ namespace Sitecore.Modules.SitemapXML
 
         public void RegisterSitemapToRobotsFile()
         {
-
-            string robotsPath = MainUtil.MapPath(string.Concat("/", "robots.txt"));
-            StringBuilder sitemapContent = new StringBuilder(string.Empty);
-            if (File.Exists(robotsPath))
-            {
-                StreamReader sr = new StreamReader(robotsPath);
-                sitemapContent.Append(sr.ReadToEnd());
-                sr.Close();
-            }
-
-            StreamWriter sw = new StreamWriter(robotsPath, false);
             foreach (DictionaryEntry site in m_Sites)
             {
+                string robotsPath = MainUtil.MapPath(SitemapManagerConfiguration.GetRobotsTextBySite(site.Key.ToString()));
+                StringBuilder sitemapContent = new StringBuilder(string.Empty);
+                if (File.Exists(robotsPath))
+                {
+                    StreamReader sr = new StreamReader(robotsPath);
+                    sitemapContent.Append(sr.ReadToEnd());
+                    sr.Close();
+                }
+
+                StreamWriter sw = new StreamWriter(robotsPath, false);
+
                 string sitemapLine = string.Format("Sitemap: http://{0}/{1}", SitemapManagerConfiguration.GetServerUrlBySite(site.Key.ToString()), site.Value);
                 if (!sitemapContent.ToString().Contains(sitemapLine))
                 {
                     sitemapContent.AppendLine(sitemapLine);
                 }
+                sw.Write(sitemapContent.ToString());
+                sw.Close();
             }
-            sw.Write(sitemapContent.ToString());
-            sw.Close();
         }
 
         private string BuildSitemapXML(List<Item> items, Site site)
@@ -203,7 +203,7 @@ namespace Sitecore.Modules.SitemapXML
                 }
                 else
                 {
-                    sb.Append("http://");
+                    //sb.Append("http://");
                     sb.Append(serverUrl);
                     sb.Append(url);
                 }
@@ -273,6 +273,11 @@ namespace Sitecore.Modules.SitemapXML
             Database database = Factory.GetDatabase(SitemapManagerConfiguration.WorkingDatabase);
 
             Item contentRoot = database.Items[rootPath];
+
+            if (contentRoot == null)
+            {
+                return new List<Item>();
+            }
 
             Item[] descendants;
             Sitecore.Security.Accounts.User user = Sitecore.Security.Accounts.User.FromName(@"extranet\Anonymous", true);
