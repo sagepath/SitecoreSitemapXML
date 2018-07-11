@@ -52,12 +52,16 @@ namespace Sitecore.Modules.SitemapXML
         public SitemapManager()
         {
             m_Sites = SitemapManagerConfiguration.GetSites();
+            BuildSitemaps();
+        }
+
+        public void BuildSitemaps()
+        {
             foreach (DictionaryEntry site in m_Sites)
             {
                 BuildSiteMap(site.Key.ToString(), site.Value.ToString());
             }
         }
-
 
         private void BuildSiteMap(string sitename, string sitemapUrlNew)
         {
@@ -288,16 +292,39 @@ namespace Sitecore.Modules.SitemapXML
             List<Item> sitemapItems = descendants.ToList();
             sitemapItems.Insert(0, contentRoot);
 
-            List<string> enabledTemplates = this.BuildListFromString(disTpls, '|');
-            List<string> excludedNames = this.BuildListFromString(exclNames, '|');
+            var enabledTemplates = new HashSet<string>(BuildListFromString(disTpls, '|'));
+            var excludedNames = new HashSet<string>(BuildListFromString(exclNames, '|'));
 
+            List<Item> validItems = new List<Item>();
 
-            var selected = from itm in sitemapItems
-                           where itm.Template != null && enabledTemplates.Contains(itm.Template.ID.ToString()) &&
-                                    !excludedNames.Contains(itm.ID.ToString())
-                           select itm;
+            foreach (var item in sitemapItems)
+            {
+                // ignore templates which are not enabled in sitemap
+                if (item.Template != null && !enabledTemplates.Contains(item.Template.ID.ToString()))
+                {
+                    Log.Debug($"skipping item = {item.Paths.FullPath}, template id = {item.TemplateID}, because it is not enabled in sitemap configuration", this);
+                    continue;
+                }
 
-            return selected.ToList();
+                // ignore excluded items
+                if (excludedNames.Contains(item.ID.ToString()))
+                {
+                    Log.Debug($"skipping item = {item.Paths.FullPath}, excluded", this);
+                    continue;
+                }
+
+                // ignore descendants of excluded items
+                if (item.Paths.GetPath(ItemPathType.ItemID).Split('/')
+                    .Any(itemPathId => excludedNames.Contains(itemPathId)))
+                {
+                    Log.Debug($"skipping item = {item.Paths.FullPath}, because it is a descendant of an excluded item", this);
+                    continue;
+                }
+
+                validItems.Add(item);
+            }
+
+            return validItems;
         }
 
         private List<string> BuildListFromString(string str, char separator)
